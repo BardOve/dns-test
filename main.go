@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,7 +44,13 @@ func main() {
 	http.Handle("/", promhttp.Handler())
 
 	go func() {
-		ticker := time.NewTicker(time.Second)
+		lookupRate := getEnv("LOOKUP_RATE", "4")
+		rate, err := strconv.Atoi(lookupRate)
+		if err != nil || rate <= 0 {
+			rate = 4
+		}
+		ticker := time.NewTicker(time.Second / time.Duration(rate))
+
 		defer ticker.Stop()
 		for range ticker.C {
 			for _, target := range targets {
