@@ -24,13 +24,14 @@ func resolve(ctx context.Context, host string) {
 	status := "success"
 	if _, err := net.DefaultResolver.LookupHost(ctx, host); err != nil {
 		status = "failure"
+		log.Print("Failed to resolve ", host, ": ", err)
 	}
 	lookups.WithLabelValues(host, status).Inc()
 }
 
 func main() {
 	var targets []string
-	for _, t := range strings.Split(getEnv("DOMAINS", "kv-vm-00297.statkart.no,google.com"), ",") {
+	for _, t := range strings.Split(getEnv("DOMAINS", "google.com"), ",") {
 		if t = strings.TrimSpace(t); t != "" {
 			targets = append(targets, t)
 			// Pre-initialize so both series show up as 0 before the first lookup.
