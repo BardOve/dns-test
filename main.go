@@ -35,7 +35,7 @@ func resolve(ctx context.Context, host string) {
 	for i := 0; i < count; i++ {
 		if _, err := net.DefaultResolver.LookupHost(ctx, host); err != nil {
 			log.Print("Failed to resolve ", host, ": ", err, " (attempt ", i+1, " of ", retryCount, ")")
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(time.Duration(delay) * time.Millisecond)
 			if i == count-1 {
 				status = "failure"
 			}
