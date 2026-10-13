@@ -21,17 +21,33 @@ var lookups = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"host", "status"})
 
 func resolve(ctx context.Context, host string) {
-	status := "success"
-	if _, err := net.DefaultResolver.LookupHost(ctx, host); err != nil {
-		status = "failure"
-		log.Print("Failed to resolve ", host, ": ", err)
+	retryCount := getEnv("RETRY_COUNT", "3")
+	retryDelay := getEnv("RETRY_DELAY_MS", "100")
+	delay, err := strconv.Atoi(retryDelay)
+	if err != nil || delay < 0 {
+		delay = 100
 	}
+	count, err := strconv.Atoi(retryCount)
+	if err != nil || count <= 0 {
+		count = 3
+	}
+	status := "success"
+	for i := 0; i < count; i++ {
+		if _, err := net.DefaultResolver.LookupHost(ctx, host); err != nil {
+			log.Print("Failed to resolve ", host, ": ", err, " (attempt ", i+1, " of ", retryCount, ")")
+			time.Sleep(100 * time.Millisecond)
+			if i == count-1 {
+				status = "failure"
+			}
+		}
+	}
+
 	lookups.WithLabelValues(host, status).Inc()
 }
 
 func main() {
 	var targets []string
-	for _, t := range strings.Split(getEnv("DOMAINS", "google.com"), ",") {
+	for _, t := range strings.Split(getEnv("DOMAINS", "google.com,testbogus.com"), ",") {
 		if t = strings.TrimSpace(t); t != "" {
 			targets = append(targets, t)
 			// Pre-initialize so both series show up as 0 before the first lookup.
