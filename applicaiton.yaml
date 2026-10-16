@@ -1,0 +1,21 @@
+## Exanple to use with skiperator (https://github.com/kartverket/skiperator)
+apiVersion: skiperator.kartverket.no/v1alpha1
+kind: Application
+metadata:
+  name: dns-test
+spec:
+  image: ghcr.io/bardove/dns-test:0.5
+  port: 8080
+  replicas: 2
+  env:
+  - name: RETRY_COUNT
+    value: "1"
+  - name: RETRY_DELAY_MS
+    value: "1000"
+  - name: DOMAINS
+    value: "google.com"
+  - name: PORT
+    value: "8081"
+  prometheus:
+    port: 8081
+    path: "/metrics"
